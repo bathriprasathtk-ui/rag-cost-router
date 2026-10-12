@@ -1,0 +1,18 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api/index" }
+  ],
+  "functions": {
+    "api/index.py": {
+      "maxDuration": 60
+    }
+  },
+  "env": {
+    "VECTOR_STORE": "memory",
+    "EMBEDDING_PROVIDER": "hashing",
+    "DB_PATH": "/tmp/metrics.db"
+  }
+}

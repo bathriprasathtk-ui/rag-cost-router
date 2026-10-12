@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAG Cost Router — Semantic Cache &amp; Cost-Aware Routing</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Semantic Cache &amp; Cost-Aware Router</h1>
+      <p class="sub" id="provider-line">loading provider info…</p>
+    </div>
+    <div class="budget" id="budget-badge">budget: —</div>
+  </header>
+
+  <section class="cards" id="cards">
+    <div class="card"><span class="label">Requests</span><span class="value" id="c-requests">–</span><span class="sub" id="c-requests-sub"></span></div>
+    <div class="card"><span class="label">Cache hit rate</span><span class="value" id="c-hitrate">–</span><span class="sub" id="c-hits-sub"></span></div>
+    <div class="card"><span class="label">LLM spend (all time)</span><span class="value" id="c-cost">–</span><span class="sub" id="c-saved"></span></div>
+    <div class="card"><span class="label">p95 latency</span><span class="value" id="c-p95">–</span><span class="sub" id="c-avg"></span></div>
+  </section>
+
+  <main>
+    <section class="panel chat-panel">
+      <h2>Query console</h2>
+      <div class="chat" id="chat"></div>
+      <form id="query-form">
+        <input id="query-input" placeholder="Ask the corpus… (e.g. Why does plain RAG fail on multi-hop questions?)" autocomplete="off" />
+        <button type="submit">Run</button>
+      </form>
+      <div class="hints">
+        <button class="chip" data-q="What is semantic caching?">shallow → small model</button>
+        <button class="chip" data-q="Why does plain RAG fail when the answer is spread across three documents, and how would you design a system to fix that?">deep → large model</button>
+        <button class="chip" data-q="What is semantic caching?">repeat → cache hit</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Cost &amp; latency (last 6h)</h2>
+      <canvas id="timeseries" height="220"></canvas>
+    </section>
+
+    <section class="panel">
+      <h2>Routing split</h2>
+      <canvas id="tierchart" height="220"></canvas>
+    </section>
+
+    <section class="panel wide">
+      <h2>Request log <button id="refresh" class="ghost">refresh</button></h2>
+      <table id="log">
+        <thead>
+          <tr>
+            <th>Time</th><th>Query</th><th>Tier</th><th>Model</th><th>Difficulty</th>
+            <th>Cache</th><th>Latency</th><th>Tokens</th><th>Cost</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

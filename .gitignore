@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# App data
+data/
+.env
+
+# Qdrant binary (fetched by start-qdrant.ps1)
+tools/qdrant/
+
+# Vercel
+.vercel/
+
+# Local/personal files (not part of the project)
+College_Assignment.docx
+resume/
+.qdrant-initialized
