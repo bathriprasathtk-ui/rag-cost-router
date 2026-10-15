@@ -36,6 +36,8 @@ def compute_cost(model: str, prompt_tokens: int, completion_tokens: int) -> floa
 _REFUSAL_MARKERS = (
     "i don't know", "i do not know", "i'm not sure", "i am not sure",
     "cannot answer", "can't answer", "no information", "as an ai",
+    # MockLLM's punt (and real small models) hedge instead of saying "I don't know".
+    "not confident",
 )
 
 
@@ -150,7 +152,13 @@ class MockLLM:
     def _is_hard(question: str) -> bool:
         from .router import score_difficulty  # avoid circular import at module load
 
-        return score_difficulty(question).difficulty >= 0.55
+        # Punt on anything meaningfully complex — at a cutoff below the router
+        # threshold, so queries the router optimistically sent to the small
+        # model actually exercise the escalation path offline. The 0.2 margin
+        # clears the router's biggest single bonus (retrieval spread, +0.15),
+        # which the mock cannot see when it re-scores the bare question.
+        cutoff = max(0.1, config.ROUTE_THRESHOLD - 0.2)
+        return score_difficulty(question).difficulty >= cutoff
 
 
 async def _sleep(seconds: float) -> None:

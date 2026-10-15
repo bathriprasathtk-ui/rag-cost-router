@@ -96,7 +96,7 @@ async function refreshStats() {
     const p = data.provider;
 
     $("provider-line").textContent =
-      `llm: ${p.llm === "LLMClient" ? "openai-compatible" : "mock (offline demo)"} · ` +
+      `llm: ${p.llm} · ` +
       `embeddings: ${p.embeddings} · small=${r.small_model} · large=${r.large_model} · threshold=${r.threshold}`;
 
     $("budget-badge").textContent = r.budget_usd_per_day

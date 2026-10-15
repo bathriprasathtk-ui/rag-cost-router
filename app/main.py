@@ -141,8 +141,15 @@ class Pipeline:
             and result.refusal
             and self.router.escalate(decision) is not None
         ):
+            first = result
             result = await self.llm.complete(decision.model, SYSTEM_PROMPT, user_prompt)
             escalated = True
+            # The failed small attempt still cost money, tokens and latency —
+            # fold them in so spend, budget guard and metrics stay truthful.
+            result.cost_usd += first.cost_usd
+            result.prompt_tokens += first.prompt_tokens
+            result.completion_tokens += first.completion_tokens
+            result.latency_ms += first.latency_ms
 
         self.router.add_spend(result.cost_usd)
         total_ms = (time.perf_counter() - t0) * 1000

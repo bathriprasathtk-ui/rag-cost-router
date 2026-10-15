@@ -61,8 +61,11 @@ class OpenAIEmbedder:
     def __init__(self, model: str = config.EMBEDDING_MODEL):
         self.name = f"openai:{model}"
         self.model = model
-        self.api_key = config.LLM_API_KEY
-        self.base_url = config.LLM_BASE_URL
+        # Use OpenAI credentials specifically — not the active LLM provider's.
+        # Otherwise a Groq-key setup (the default when both keys exist) would
+        # send its key to the wrong /embeddings endpoint.
+        self.api_key = config.OPENAI_API_KEY
+        self.base_url = config.OPENAI_BASE_URL
 
     def embed(self, texts: Iterable[str]) -> np.ndarray:
         texts = list(texts)

@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 
 from app import config  # noqa: E402
 from app.main import app, pipeline  # noqa: E402
+from app.router import score_difficulty  # noqa: E402
 
 
 @pytest.fixture(scope="module")
@@ -72,3 +73,41 @@ def test_stats_aggregates(client):
 
 def test_empty_query_rejected(client):
     assert client.post("/api/query", json={"query": ""}).status_code == 422
+
+
+def test_mock_small_punts_below_router_threshold():
+    """Offline escalation must be reachable: the mock small model punts on
+    mid-difficulty queries that the router still optimistically sends to it.
+    """
+    from app.llm import MockLLM
+
+    q = (
+        "Why do embedding models normalize vectors, and how does that change "
+        "similarity scores?"
+    )
+    difficulty = score_difficulty(q).difficulty
+    assert config.ROUTE_THRESHOLD - 0.2 <= difficulty < config.ROUTE_THRESHOLD
+    assert MockLLM._is_hard(q), "mock small model should refuse this"
+
+
+def test_small_model_refusal_escalates_and_is_flagged(client, monkeypatch):
+    from app.llm import MockLLM
+
+    # Force the small tier to refuse; the query itself is shallow, so it
+    # still routes small and the escalation branch is what promotes it.
+    monkeypatch.setattr(MockLLM, "_is_hard", staticmethod(lambda question: True))
+
+    q = "What is a bloom filter in vector database terms?"
+    res = client.post("/api/query", json={"query": q})
+    assert res.status_code == 200
+    body = res.json()
+    assert body["cache"]["hit"] is False
+    assert body["route"]["tier"] == "large"
+    assert body["route"]["forced"] == "escalation"
+    assert body["route"]["model"] == config.LARGE_MODEL
+    assert body["usage"]["escalated"] is True
+    assert body["usage"]["cost_usd"] > 0
+    assert any("escalated" in r for r in body["route"]["reasons"])
+
+    rows = client.get("/api/requests?limit=20").json()["requests"]
+    assert any(r["query"] == q and r["escalated"] == 1 for r in rows)
