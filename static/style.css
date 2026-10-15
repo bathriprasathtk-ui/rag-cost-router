@@ -76,7 +76,9 @@ main {
   min-width: 0;
 }
 
-.panel.wide { grid-column: 1 / -1; }
+/* The request-log table is deliberately un-wrapped (nowrap cells); scroll it
+   inside the panel instead of letting it drag the whole page sideways. */
+.panel.wide { grid-column: 1 / -1; overflow-x: auto; }
 
 .chat {
   height: 340px;

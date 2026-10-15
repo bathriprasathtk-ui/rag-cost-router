@@ -51,7 +51,9 @@ async function runQuery(q) {
     );
   } finally {
     form.disabled = false;
-    input.focus();
+    // preventScroll: focusing the input must not yank the page around
+    // (the console sits below the fold on narrow panels).
+    input.focus({ preventScroll: true });
   }
 }
 
