@@ -7,6 +7,7 @@ __pycache__/
 # App data
 data/
 uvicorn.log
+qdrant.log
 .env
 
 # Qdrant binary (fetched by start-qdrant.ps1)
