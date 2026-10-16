@@ -133,7 +133,7 @@ function drawTimeseries(series) {
     data: {
       labels,
       datasets: [
-        { label: "cost ($)", data: costs, backgroundColor: "#f8514999", yAxisID: "y", borderRadius: 3 },
+        { label: "cost ($)", data: costs, backgroundColor: "#f8514999", yAxisID: "y", borderRadius: 3, maxBarThickness: 48 },
         { label: "avg latency (ms)", data: lat, type: "line", borderColor: "#58a6ff", backgroundColor: "#58a6ff", yAxisID: "y1", tension: 0.3, pointRadius: 2 },
       ],
     },

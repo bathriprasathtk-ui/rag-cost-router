@@ -80,6 +80,13 @@ main {
    inside the panel instead of letting it drag the whole page sideways. */
 .panel.wide { grid-column: 1 / -1; overflow-x: auto; }
 
+/* Fixed-height chart host: Chart.js (responsive, maintainAspectRatio:false)
+   fills this box exactly, so panels can never stretch the plot area. */
+.chartbox {
+  position: relative;
+  height: 230px;
+}
+
 .chat {
   height: 340px;
   overflow-y: auto;
