@@ -133,18 +133,18 @@ function drawTimeseries(series) {
     data: {
       labels,
       datasets: [
-        { label: "cost ($)", data: costs, backgroundColor: "#f8514999", yAxisID: "y", borderRadius: 3, maxBarThickness: 48 },
-        { label: "avg latency (ms)", data: lat, type: "line", borderColor: "#58a6ff", backgroundColor: "#58a6ff", yAxisID: "y1", tension: 0.3, pointRadius: 2 },
+        { label: "cost ($)", data: costs, backgroundColor: "rgba(139, 92, 246, 0.65)", hoverBackgroundColor: "rgba(139, 92, 246, 0.9)", yAxisID: "y", borderRadius: 4, maxBarThickness: 48 },
+        { label: "avg latency (ms)", data: lat, type: "line", borderColor: "#22d3ee", backgroundColor: "#22d3ee", yAxisID: "y1", tension: 0.35, pointRadius: 3, pointHoverRadius: 5 },
       ],
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { labels: { color: "#8b949e", boxWidth: 12, font: { size: 11 } } } },
+      plugins: { legend: { labels: { color: "#96a2c4", boxWidth: 12, font: { size: 11 } } } },
       scales: {
-        x: { ticks: { color: "#8b949e", maxRotation: 0, autoSkip: true, font: { size: 10 } }, grid: { color: "#262d3855" } },
-        y: { position: "left", ticks: { color: "#f85149", font: { size: 10 } }, grid: { color: "#262d3855" } },
-        y1: { position: "right", ticks: { color: "#58a6ff", font: { size: 10 } }, grid: { drawOnChartArea: false } },
+        x: { ticks: { color: "#96a2c4", maxRotation: 0, autoSkip: true, font: { size: 10 } }, grid: { color: "rgba(148, 163, 255, 0.07)" } },
+        y: { position: "left", ticks: { color: "#a78bfa", font: { size: 10 } }, grid: { color: "rgba(148, 163, 255, 0.07)" } },
+        y1: { position: "right", ticks: { color: "#22d3ee", font: { size: 10 } }, grid: { drawOnChartArea: false } },
       },
     },
   };
@@ -157,16 +157,16 @@ function drawTiers(byTier) {
   const map = Object.fromEntries(byTier.map((t) => [t.route_tier, t.count]));
   const labels = ["cache", "small", "large"].filter((k) => map[k]);
   const data = labels.map((k) => map[k]);
-  const colors = { cache: "#58a6ff", small: "#3fb950", large: "#d29922" };
+  const colors = { cache: "#22d3ee", small: "#34d399", large: "#fbbf24" };
 
   const cfg = {
     type: "doughnut",
-    data: { labels, datasets: [{ data, backgroundColor: labels.map((l) => colors[l]), borderColor: "#161b22", borderWidth: 2 }] },
+    data: { labels, datasets: [{ data, backgroundColor: labels.map((l) => colors[l]), borderColor: "rgba(19, 23, 42, 0.9)", borderWidth: 2, hoverOffset: 6 }] },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      cutout: "62%",
-      plugins: { legend: { position: "bottom", labels: { color: "#8b949e", boxWidth: 12, font: { size: 11 } } } },
+      cutout: "64%",
+      plugins: { legend: { position: "bottom", labels: { color: "#96a2c4", boxWidth: 12, font: { size: 11 } } } },
     },
   };
   if (tierChart) tierChart.destroy();
