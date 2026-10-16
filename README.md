@@ -17,7 +17,7 @@ Built as a resume project from the "three RAG projects that stand out" list:
 
 | Component | Implementation |
 |---|---|
-| **LLM (free tier)** | Groq API — `llama-3.1-8b-instant` (small) vs `llama-3.3-70b-versatile` (large). Any OpenAI-compatible endpoint works (OpenAI, Together, vLLM...). |
+| **LLM (free tier)** | Groq API — `openai/gpt-oss-20b` (small) vs `openai/gpt-oss-120b` (large). Any OpenAI-compatible endpoint works (OpenAI, Together, vLLM...). |
 | **Embeddings** | Local `sentence-transformers/all-MiniLM-L6-v2` — true semantic similarity, free, offline after first download. |
 | **Vector store** | Qdrant in Docker (persistent across restarts), automatic in-memory fallback when Docker isn't running. |
 | **Semantic cache** | Cosine similarity over query embeddings with tunable threshold, TTL expiry, and LRU cap. Hits skip retrieval *and* generation. |
@@ -85,7 +85,7 @@ store) — everything works for demos and tests; only generation is simulated.
 
 | Value | Small model | Large model | Cost |
 |---|---|---|---|
-| `groq` (default with `GROQ_API_KEY`) | llama-3.1-8b-instant | llama-3.3-70b-versatile | free tier |
+| `groq` (default with `GROQ_API_KEY`) | openai/gpt-oss-20b | openai/gpt-oss-120b | free tier |
 | `openai` (with `OPENAI_API_KEY`) | gpt-4o-mini | gpt-4o | usage-based |
 | `mock` | — | — | $0, no key |
 
@@ -115,7 +115,7 @@ Example response:
 ```json
 {
   "answer": "...",
-  "route": {"tier": "large", "model": "llama-3.3-70b-versatile", "difficulty": 0.71,
+  "route": {"tier": "large", "model": "openai/gpt-oss-120b", "difficulty": 0.71,
             "reasons": ["depth keywords: why, how", "multi-part question", "context spread across several chunks"]},
   "cache": {"hit": false, "similarity": 0.42},
   "usage": {"cost_usd": 0.00031, "total_ms": 640.2, "retrieval_ms": 3.1,

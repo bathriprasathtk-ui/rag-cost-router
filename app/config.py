@@ -1,7 +1,7 @@
 """Central configuration, loaded from environment variables (optionally .env).
 
 Provider presets keep .env tiny:
-    LLM_PROVIDER=groq     -> free tier, llama-3.1-8b-instant + llama-3.3-70b-versatile
+    LLM_PROVIDER=groq     -> free tier, openai/gpt-oss-20b + openai/gpt-oss-120b
     LLM_PROVIDER=openai   -> gpt-4o-mini + gpt-4o
     LLM_PROVIDER=mock     -> offline demo, no key required
 """
@@ -48,8 +48,10 @@ OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1").rstr
 # Model defaults per provider; explicit SMALL_MODEL/LARGE_MODEL always win.
 PROVIDER_PRESETS: dict[str, dict] = {
     "groq": {
-        "small": "llama-3.1-8b-instant",
-        "large": "llama-3.3-70b-versatile",
+        # Groq retired the llama-3.x fleet; the gpt-oss pair is what its
+        # free tier serves now (verified via /openai/v1/models, Oct 2026).
+        "small": "openai/gpt-oss-20b",
+        "large": "openai/gpt-oss-120b",
         "base_url": GROQ_BASE_URL,
         "api_key": GROQ_API_KEY,
     },
@@ -135,7 +137,7 @@ PRICING: dict[str, dict[str, float]] = {
     "llama-3.1-8b-instant": {"input": 0.05, "output": 0.08},
     "llama-3.1-70b-versatile": {"input": 0.59, "output": 0.79},
     "gpt-oss-120b": {"input": 0.15, "output": 0.60},
-    "gpt-oss-20b": {"input": 0.10, "output": 0.50},
+    "gpt-oss-20b": {"input": 0.075, "output": 0.30},
     # Google
     "gemini-2.5-flash": {"input": 0.30, "output": 2.50},
     "gemini-2.5-flash-lite": {"input": 0.10, "output": 0.40},
@@ -146,11 +148,18 @@ PRICING: dict[str, dict[str, float]] = {
 
 
 def price_for(model: str) -> dict[str, float]:
-    """Return per-1M-token prices for a model, best-effort matching the prefix."""
+    """Return per-1M-token prices for a model, best-effort matching the prefix.
+
+    Provider-prefixed ids ("openai/gpt-oss-20b") are matched on their basename
+    too, so a slash in the model id never silently falls back to mid-market.
+    """
+    base = model.rsplit("/", 1)[-1]
     if model in PRICING:
         return PRICING[model]
+    if base in PRICING:
+        return PRICING[base]
     for known, price in PRICING.items():
-        if model.startswith(known):
+        if model.startswith(known) or base.startswith(known):
             return price
     # Unknown model: assume mid-market pricing rather than free.
     return {"input": 1.00, "output": 3.00}

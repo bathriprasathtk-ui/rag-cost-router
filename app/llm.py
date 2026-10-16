@@ -62,7 +62,7 @@ class LLMClient:
     def available(self) -> bool:
         return bool(self.api_key and self.base_url)
 
-    async def complete(self, model: str, system: str, user: str, max_tokens: int = 700) -> LLMResult:
+    async def complete(self, model: str, system: str, user: str, max_tokens: int = 1400) -> LLMResult:
         payload = {
             "model": model,
             "messages": [
@@ -110,7 +110,7 @@ class MockLLM:
     def __init__(self, embedder=None):
         self.embedder = embedder
 
-    async def complete(self, model: str, system: str, user: str, max_tokens: int = 700) -> LLMResult:
+    async def complete(self, model: str, system: str, user: str, max_tokens: int = 1400) -> LLMResult:
         started = time.perf_counter()
         question = user.split("Question:", 1)[-1].strip().split("\n")[0]
         context = ""
