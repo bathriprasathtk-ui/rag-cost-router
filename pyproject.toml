@@ -1,0 +1,4 @@
+# Tool configuration only — the app runs straight from requirements.txt
+# (Vercel installs from there; no packaging step involved).
+[tool.pytest.ini_options]
+testpaths = ["tests"]

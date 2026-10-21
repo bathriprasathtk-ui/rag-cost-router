@@ -68,7 +68,7 @@ function renderResponse(data, uiLatency) {
   } else {
     tags.push(tag(route.tier, `${route.tier} → ${route.model}`));
     tags.push(tag("", `difficulty ${route.difficulty}`));
-    tags.push(tag("cost", `${usage.cost_usd} · ${usage.total_ms}ms`));
+    tags.push(tag("cost", `${usd(usage.cost_usd)} · ${usage.total_ms}ms`));
     if (usage.escalated) tags.push(tag("large", "escalated"));
     if (context && context.length) tags.push(tag("", `${context.length} chunks retrieved`));
   }
@@ -97,9 +97,14 @@ async function refreshStats() {
     const r = data.routing;
     const p = data.provider;
 
-    $("provider-line").textContent =
-      `llm: ${p.llm} · ` +
-      `embeddings: ${p.embeddings} · small=${r.small_model} · large=${r.large_model} · threshold=${r.threshold}`;
+    const offline = p.llm.toLowerCase().includes("mock");
+    const badge = offline
+      ? '<span class="mock">offline demo</span>'
+      : '<span class="live">live</span>';
+    $("provider-line").innerHTML =
+      `${badge} llm: ${escapeHtml(p.llm)} · ` +
+      `embeddings: ${escapeHtml(p.embeddings)} · small=${escapeHtml(r.small_model)} · ` +
+      `large=${escapeHtml(r.large_model)} · threshold=${r.threshold}`;
 
     $("budget-badge").textContent = r.budget_usd_per_day
       ? `budget ${usd(r.spend_today_usd)} / ${usd(r.budget_usd_per_day)}${r.budget_exhausted ? " — EXHAUSTED" : ""}`

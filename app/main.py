@@ -12,7 +12,7 @@ import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -38,9 +38,9 @@ class QueryRequest(BaseModel):
 
 
 class IngestRequest(BaseModel):
-    text: str | None = None
+    text: str | None = Field(None, max_length=200_000)
     doc: str = "inline"
-    path: str | None = None
+    path: str | None = Field(None, max_length=500)
 
 
 class Pipeline:
@@ -227,6 +227,20 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title="Semantic Cache + Cost-Aware RAG Router", lifespan=lifespan)
 
 
+@app.middleware("http")
+async def revalidate_assets(request: Request, call_next):
+    """Browsers must revalidate HTML + assets (cheap 304 via StaticFiles' ETags).
+
+    Without this, heuristic caching keeps serving a stale app.js/style.css
+    after every UI update — the dashboard then mixes old chart code with new
+    markup (old colors, ballooned canvases, phantom scrollbars).
+    """
+    response = await call_next(request)
+    if request.url.path == "/" or request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 @app.post("/api/query")
 async def query(req: QueryRequest):
     if not req.query.strip():
@@ -242,6 +256,11 @@ async def query(req: QueryRequest):
 def ingest(req: IngestRequest):
     ensure_started()
     if req.path:
+        if not config.ALLOW_PATH_INGEST:
+            raise HTTPException(
+                status_code=403,
+                detail="path ingestion is disabled on this deployment; POST {text, doc} instead",
+            )
         added = pipeline.store.add_directory(Path(req.path))
         if added == 0:
             raise HTTPException(status_code=404, detail=f"no documents found under {req.path}")

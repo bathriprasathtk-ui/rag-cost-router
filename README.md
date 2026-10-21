@@ -1,5 +1,7 @@
 # Semantic Caching + Cost-Aware RAG Router
 
+[![CI](https://github.com/bathriprasathtk-ui/rag-cost-router/actions/workflows/ci.yml/badge.svg)](https://github.com/bathriprasathtk-ui/rag-cost-router/actions/workflows/ci.yml)
+
 A local-first RAG service that decides, **before** spending money on an LLM,
 whether it needs to call a model at all — and if so, which model.
 
@@ -45,6 +47,22 @@ pip install -r requirements-local.txt   # adds sentence-transformers + qdrant-cl
 .\start-app.ps1          # or: uvicorn app.main:app --port 8000
 ```
 
+Open <http://127.0.0.1:8000>.
+
+Without a key the app still runs (offline mock LLM, hashing embedder, in-memory
+store) — everything works for demos and tests; only generation is simulated.
+The dashboard header shows a green **live** badge when a provider key is active
+and an amber **offline demo** badge when it isn't.
+
+### Troubleshooting
+
+- **Header says "offline demo"?** The server found no provider key. Put
+  `GROQ_API_KEY=gsk_...` in `.env` in the project root — it is now loaded
+  regardless of which directory you launch uvicorn from — and restart.
+- **Charts look wrong after a UI update (old colors, oversized bars)?** That
+  was stale browser cache serving an old `app.js`. Static assets now send
+  `Cache-Control: no-cache`, so a plain reload always picks up the current UI.
+
 ## Deploy to Vercel
 
 The repo is Vercel-ready — `vercel.json` rewrites every route to the
@@ -55,6 +73,7 @@ serverless ASGI function in `api/index.py`, with these cloud defaults:
 | `VECTOR_STORE` | `memory` | no Qdrant server in serverless; corpus re-ingests on cold start |
 | `EMBEDDING_PROVIDER` | `hashing` | PyTorch exceeds Vercel's bundle limit; hashing needs zero deps |
 | `DB_PATH` | `/tmp/metrics.db` | the repo dir is read-only in functions; `/tmp` is writable |
+| `ALLOW_PATH_INGEST` | `false` | `/api/ingest`'s `path` option can pull server files into the corpus — disabled on public deployments |
 
 `GROQ_API_KEY` is read from the environment at runtime — add it in the
 Vercel dashboard (Settings → Environment Variables). Without it the app
@@ -75,11 +94,6 @@ Notes for the deployed instance:
 - Metrics/cache live per warm instance and reset on cold starts — expected
   for a serverless demo; the numbers on the dashboard are still real.
 - `docker-compose.yml`, `start-*.ps1`, and Qdrant are only used locally.
-
-Open <http://127.0.0.1:8000>.
-
-Without a key the app still runs (offline mock LLM, hashing embedder, in-memory
-store) — everything works for demos and tests; only generation is simulated.
 
 ### Provider presets (`LLM_PROVIDER`)
 
@@ -131,6 +145,9 @@ pytest -q
 
 Covers cache hit/miss/TTL/LRU behavior, difficulty scoring and routing rules,
 budget downshift, escalation, and end-to-end pipeline + metrics aggregation.
+The same suite runs in GitHub Actions on every push/PR (fully offline — mock
+LLM, hashing embeddings, in-memory store), plus a syntax check of the
+dashboard JS.
 
 ## Configuration
 
@@ -141,6 +158,8 @@ All via environment variables — see `.env.example`. Key knobs:
 - `BUDGET_USD_PER_DAY` (off) — enables budget downshifting
 - `ESCALATE_ON_LOW_CONFIDENCE` (true) — small→large fallback on refusals
 - `VECTOR_STORE` (`auto`) — `qdrant` to force, `memory` to disable
+- `ALLOW_PATH_INGEST` (true) — set `false` wherever the API is public to block
+  filesystem ingestion via `/api/ingest`
 
 ## Project layout
 
@@ -159,12 +178,14 @@ vercel.json      rewrites + cloud env defaults
 static/          dashboard (Chart.js)
 sample_data/     demo corpus (auto-ingested at startup)
 tests/           unit + end-to-end tests (offline: mock LLM, memory store)
+.github/         CI: pytest matrix + dashboard JS syntax check
 tools/qdrant/    native Qdrant binary (fetched by start-qdrant.ps1)
 docker-compose.yml  Qdrant, for Docker/WSL setups
 start-qdrant.ps1    launch native Qdrant with local storage
 start-app.ps1       launch the API + dashboard
 requirements.txt       core deps (Vercel-safe, no PyTorch)
 requirements-local.txt  + sentence-transformers, qdrant-client, pytest
+pyproject.toml         tool config (pytest discovery)
 ```
 
 ## Talking about it in interviews

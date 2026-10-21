@@ -13,7 +13,14 @@ from pathlib import Path
 try:  # optional dependency-free .env loading
     from dotenv import load_dotenv  # type: ignore
 
-    load_dotenv()
+    # Always prefer the project-root .env, no matter which directory the
+    # server was launched from — otherwise `uvicorn` started elsewhere misses
+    # the key and the app silently falls back to mock mode.
+    _env_file = Path(__file__).resolve().parent.parent / ".env"
+    if _env_file.exists():
+        load_dotenv(_env_file)
+    else:
+        load_dotenv()
 except Exception:  # pragma: no cover - dotenv is optional
     pass
 
@@ -116,6 +123,12 @@ CACHE_MAX_ENTRIES = int(os.getenv("CACHE_MAX_ENTRIES", "2000"))
 
 # --- Retrieval ---------------------------------------------------------------
 TOP_K = int(os.getenv("TOP_K", "4"))
+
+# POST /api/ingest accepts a filesystem `path`; that lets any caller on a
+# deployed instance pull server files into the corpus. Keep it enabled for
+# local convenience, disable it wherever the API is public (vercel.json sets
+# ALLOW_PATH_INGEST=false).
+ALLOW_PATH_INGEST = _bool("ALLOW_PATH_INGEST", True)
 
 # --- App --------------------------------------------------------------------
 HOST = os.getenv("HOST", "127.0.0.1")
