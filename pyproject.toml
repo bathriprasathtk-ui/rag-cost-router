@@ -2,3 +2,6 @@
 # (Vercel installs from there; no packaging step involved).
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# The repo root must be importable (`import app`) however pytest is invoked:
+# `python -m pytest` prepends the cwd, bare `pytest` (what CI runs) does not.
+pythonpath = ["."]
