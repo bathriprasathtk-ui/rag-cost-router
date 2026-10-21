@@ -185,7 +185,7 @@ function drawTimeseries(series) {
       const { ctx, chartArea } = chart;
       if (!chartArea) return;
       ctx.save();
-      ctx.fillStyle = "#96a2c4";
+      ctx.fillStyle = "#9aa3b8";
       ctx.font = "12px Inter, sans-serif";
       ctx.textAlign = "center";
       ctx.fillText("no traffic in this window yet",
@@ -203,8 +203,8 @@ function drawTimeseries(series) {
         {
           label: "cost ($)",
           data: costs,
-          borderColor: "#8b5cf6",
-          backgroundColor: "rgba(139, 92, 246, 0.16)",
+          borderColor: "#f6b93b",
+          backgroundColor: "rgba(246, 185, 59, 0.14)",
           fill: true,
           borderWidth: 2,
           tension: 0.35,
@@ -216,8 +216,8 @@ function drawTimeseries(series) {
         {
           label: "avg latency (ms)",
           data: lat,
-          borderColor: "#22d3ee",
-          backgroundColor: "#22d3ee",
+          borderColor: "#4cc3ff",
+          backgroundColor: "#4cc3ff",
           borderWidth: 2,
           tension: 0.35,
           pointRadius: 2.5,
@@ -232,11 +232,11 @@ function drawTimeseries(series) {
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: "index", intersect: false },
-      plugins: { legend: { labels: { color: "#96a2c4", boxWidth: 12, font: { size: 11 } } } },
+      plugins: { legend: { labels: { color: "#9aa3b8", boxWidth: 12, font: { size: 11 } } } },
       scales: {
-        x: { ticks: { color: "#96a2c4", maxRotation: 0, autoSkip: true, maxTicksLimit: 8, font: { size: 10 } }, grid: { color: "rgba(148, 163, 255, 0.07)" } },
-        y: { position: "left", beginAtZero: true, ticks: { color: "#a78bfa", font: { size: 10 }, callback: (v) => usd(v) }, grid: { color: "rgba(148, 163, 255, 0.07)" } },
-        y1: { position: "right", beginAtZero: true, ticks: { color: "#22d3ee", font: { size: 10 }, callback: (v) => `${v}ms` }, grid: { drawOnChartArea: false } },
+        x: { ticks: { color: "#9aa3b8", maxRotation: 0, autoSkip: true, maxTicksLimit: 8, font: { size: 10 } }, grid: { color: "rgba(255, 255, 255, 0.05)" } },
+        y: { position: "left", beginAtZero: true, ticks: { color: "#f6b93b", font: { size: 10 }, callback: (v) => usd(v) }, grid: { color: "rgba(255, 255, 255, 0.05)" } },
+        y1: { position: "right", beginAtZero: true, ticks: { color: "#4cc3ff", font: { size: 10 }, callback: (v) => `${v}ms` }, grid: { drawOnChartArea: false } },
       },
     },
     plugins: [emptyState],
@@ -250,16 +250,16 @@ function drawTiers(byTier) {
   const map = Object.fromEntries(byTier.map((t) => [t.route_tier, t.count]));
   const labels = ["cache", "small", "large"].filter((k) => map[k]);
   const data = labels.map((k) => map[k]);
-  const colors = { cache: "#22d3ee", small: "#34d399", large: "#fbbf24" };
+  const colors = { cache: "#2dd4bf", small: "#34d399", large: "#ff6b57" };
 
   const cfg = {
     type: "doughnut",
-    data: { labels, datasets: [{ data, backgroundColor: labels.map((l) => colors[l]), borderColor: "rgba(19, 23, 42, 0.9)", borderWidth: 2, hoverOffset: 6 }] },
+    data: { labels, datasets: [{ data, backgroundColor: labels.map((l) => colors[l]), borderColor: "rgba(18, 19, 24, 0.9)", borderWidth: 2, hoverOffset: 6 }] },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       cutout: "64%",
-      plugins: { legend: { position: "bottom", labels: { color: "#96a2c4", boxWidth: 12, font: { size: 11 } } } },
+      plugins: { legend: { position: "bottom", labels: { color: "#9aa3b8", boxWidth: 12, font: { size: 11 } } } },
     },
   };
   if (tierChart) tierChart.destroy();
