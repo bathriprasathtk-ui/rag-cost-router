@@ -90,6 +90,29 @@ def test_mock_small_punts_below_router_threshold():
     assert MockLLM._is_hard(q), "mock small model should refuse this"
 
 
+def test_static_assets_and_index_revalidate(client):
+    """Assets must send Cache-Control: no-cache — heuristic caching is what
+    left browsers running stale dashboard code after UI updates."""
+    for path in ("/", "/static/app.js", "/static/style.css"):
+        res = client.get(path)
+        assert res.status_code == 200, path
+        assert res.headers.get("cache-control") == "no-cache", path
+
+
+def test_path_ingest_can_be_disabled(client, monkeypatch):
+    """ALLOW_PATH_INGEST=false must block filesystem ingestion (403) while
+    inline text ingestion keeps working."""
+    from app import config as cfg
+
+    monkeypatch.setattr(cfg, "ALLOW_PATH_INGEST", False)
+    res = client.post("/api/ingest", json={"path": "/etc"})
+    assert res.status_code == 403
+    assert "disabled" in res.json()["detail"]
+
+    res = client.post("/api/ingest", json={"text": "ingest gating check", "doc": "t"})
+    assert res.status_code == 200
+
+
 def test_small_model_refusal_escalates_and_is_flagged(client, monkeypatch):
     from app.llm import MockLLM
 
