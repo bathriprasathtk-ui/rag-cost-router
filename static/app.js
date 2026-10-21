@@ -129,29 +129,117 @@ async function refreshStats() {
 
 function drawTimeseries(series) {
   if (typeof Chart === "undefined") return;
-  const labels = series.map((r) => r.bucket.slice(11));
-  const costs = series.map((r) => +(r.cost || 0).toFixed(6));
-  const lat = series.map((r) => Math.round(r.avg_ms || 0));
+
+  // The API only returns minute-buckets that actually had traffic, so sparse
+  // traffic used to render as a couple of isolated giant bars floating in an
+  // empty plot. Rebuild a continuous timeline instead: every slot in the
+  // data span is present (cost 0 / latency null where nothing happened), so
+  // the chart reads like a real time series.
+  const MIN = 60000;
+  const labels = [];
+  const costs = [];
+  const lat = [];
+
+  if (series.length) {
+    const byMin = new Map();
+    for (const r of series) {
+      // Buckets come from SQLite strftime(..., 'unixepoch') -> UTC minutes.
+      const t = Date.parse(`${r.bucket.replace(" ", "T")}:00Z`);
+      if (Number.isNaN(t)) continue;
+      const slot = byMin.get(t) || { cost: 0, lats: [] };
+      slot.cost += +(r.cost || 0);
+      if (+r.avg_ms > 0) slot.lats.push(+r.avg_ms);
+      byMin.set(t, slot);
+    }
+    const times = [...byMin.keys()].sort((a, b) => a - b);
+    if (times.length) {
+      let start = Math.floor(times[0] / MIN) * MIN;
+      let end = Math.ceil(times[times.length - 1] / MIN) * MIN;
+      // A single-minute window stays readable instead of one naked point.
+      if (end - start < 15 * MIN) { start -= 7 * MIN; end += 7 * MIN; }
+      // Cap resolution so a full window can't flood the canvas.
+      const step = Math.max(MIN, Math.ceil((end - start) / MIN / 180) * MIN);
+      for (let t = start; t <= end; t += step) {
+        let cost = 0;
+        const lats = [];
+        let seen = false;
+        for (let m = t; m < t + step; m += MIN) {
+          const slot = byMin.get(m);
+          if (slot) {
+            seen = true;
+            cost += slot.cost;
+            lats.push(...slot.lats);
+          }
+        }
+        labels.push(new Date(t).toISOString().slice(11, 16));
+        costs.push(seen ? +cost.toFixed(6) : 0);
+        lat.push(lats.length ? Math.round(lats.reduce((a, b) => a + b, 0) / lats.length) : null);
+      }
+    }
+  }
+
+  const emptyState = {
+    id: "emptyState",
+    afterDraw(chart) {
+      if (labels.length) return;
+      const { ctx, chartArea } = chart;
+      if (!chartArea) return;
+      ctx.save();
+      ctx.fillStyle = "#96a2c4";
+      ctx.font = "12px Inter, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("no traffic in this window yet",
+        (chartArea.left + chartArea.right) / 2,
+        (chartArea.top + chartArea.bottom) / 2);
+      ctx.restore();
+    },
+  };
 
   const cfg = {
-    type: "bar",
+    type: "line",
     data: {
       labels,
       datasets: [
-        { label: "cost ($)", data: costs, backgroundColor: "rgba(139, 92, 246, 0.65)", hoverBackgroundColor: "rgba(139, 92, 246, 0.9)", yAxisID: "y", borderRadius: 4, maxBarThickness: 48 },
-        { label: "avg latency (ms)", data: lat, type: "line", borderColor: "#22d3ee", backgroundColor: "#22d3ee", yAxisID: "y1", tension: 0.35, pointRadius: 3, pointHoverRadius: 5 },
+        {
+          label: "cost ($)",
+          data: costs,
+          borderColor: "#8b5cf6",
+          backgroundColor: "rgba(139, 92, 246, 0.16)",
+          fill: true,
+          borderWidth: 2,
+          tension: 0.35,
+          pointRadius: 0,
+          pointHitRadius: 10,
+          spanGaps: true,
+          yAxisID: "y",
+        },
+        {
+          label: "avg latency (ms)",
+          data: lat,
+          borderColor: "#22d3ee",
+          backgroundColor: "#22d3ee",
+          borderWidth: 2,
+          tension: 0.35,
+          pointRadius: 2.5,
+          pointHoverRadius: 5,
+          pointHitRadius: 10,
+          spanGaps: true,
+          yAxisID: "y1",
+        },
       ],
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
       plugins: { legend: { labels: { color: "#96a2c4", boxWidth: 12, font: { size: 11 } } } },
       scales: {
-        x: { ticks: { color: "#96a2c4", maxRotation: 0, autoSkip: true, font: { size: 10 } }, grid: { color: "rgba(148, 163, 255, 0.07)" } },
-        y: { position: "left", ticks: { color: "#a78bfa", font: { size: 10 } }, grid: { color: "rgba(148, 163, 255, 0.07)" } },
-        y1: { position: "right", ticks: { color: "#22d3ee", font: { size: 10 } }, grid: { drawOnChartArea: false } },
+        x: { ticks: { color: "#96a2c4", maxRotation: 0, autoSkip: true, maxTicksLimit: 8, font: { size: 10 } }, grid: { color: "rgba(148, 163, 255, 0.07)" } },
+        y: { position: "left", beginAtZero: true, ticks: { color: "#a78bfa", font: { size: 10 }, callback: (v) => usd(v) }, grid: { color: "rgba(148, 163, 255, 0.07)" } },
+        y1: { position: "right", beginAtZero: true, ticks: { color: "#22d3ee", font: { size: 10 }, callback: (v) => `${v}ms` }, grid: { drawOnChartArea: false } },
       },
     },
+    plugins: [emptyState],
   };
   if (tsChart) { tsChart.destroy(); }
   tsChart = new Chart($("timeseries"), cfg);
