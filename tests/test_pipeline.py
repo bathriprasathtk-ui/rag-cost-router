@@ -13,7 +13,7 @@ from app.router import score_difficulty  # noqa: E402
 def client():
     # startup() runs via the ASGI lifespan -> ensure_started()
     pipeline.cache.clear()
-    pipeline.db.clear()
+    pipeline.metrics.clear()
     with TestClient(app) as c:
         yield c
 

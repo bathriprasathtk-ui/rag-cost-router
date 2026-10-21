@@ -13,7 +13,7 @@
   "env": {
     "VECTOR_STORE": "memory",
     "EMBEDDING_PROVIDER": "hashing",
-    "DB_PATH": "/tmp/metrics.db",
+    "METRICS_PATH": "/tmp/requests.jsonl",
     "ALLOW_PATH_INGEST": "false"
   }
 }

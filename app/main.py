@@ -21,7 +21,7 @@ from . import config
 from .cache import SemanticCache
 from .embeddings import build_embedder
 from .llm import build_llm, compute_cost, estimate_tokens
-from .metrics import MetricsDB
+from .metrics import MetricsLog
 from .rag import build_store
 from .router import CostAwareRouter
 
@@ -52,7 +52,7 @@ class Pipeline:
         self.cache = SemanticCache()
         self.router = CostAwareRouter()
         self.store = build_store(self.embedder)
-        self.db = MetricsDB()
+        self.metrics = MetricsLog()
         self.warmup_ms = 0.0
 
     def startup(self) -> None:
@@ -88,7 +88,7 @@ class Pipeline:
         if lookup.hit and lookup.entry is not None:
             total_ms = (time.perf_counter() - t0) * 1000
             entry = lookup.entry
-            self.db.record(
+            self.metrics.record(
                 query=query,
                 route_tier="cache",
                 model=entry.model,
@@ -156,7 +156,7 @@ class Pipeline:
 
         # 6. Populate cache + persist metrics.
         self.cache.store(query, query_vec, result.text, decision.model, tier=decision.tier)
-        self.db.record(
+        self.metrics.record(
             query=query,
             route_tier=decision.tier,
             model=result.model,
@@ -275,7 +275,7 @@ def ingest(req: IngestRequest):
 def stats():
     ensure_started()
     return {
-        "stats": pipeline.db.stats(),
+        "stats": pipeline.metrics.stats(),
         "cache": pipeline.cache.stats(),
         "retrieval": pipeline.store.stats(),
         "routing": {
@@ -298,7 +298,7 @@ def stats():
 @app.get("/api/requests")
 def requests(limit: int = 50):
     ensure_started()
-    return {"requests": pipeline.db.recent(limit=min(max(limit, 1), 200))}
+    return {"requests": pipeline.metrics.recent(limit=min(max(limit, 1), 200))}
 
 
 @app.get("/api/health")

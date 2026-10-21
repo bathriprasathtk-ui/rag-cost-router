@@ -11,9 +11,9 @@ os.environ.setdefault("EMBEDDING_PROVIDER", "hashing")
 os.environ.setdefault("VECTOR_STORE", "memory")
 os.environ.setdefault("GROQ_API_KEY", "")
 os.environ.setdefault("OPENAI_API_KEY", "")
-# The suite clears tables on purpose — point it at a scratch DB so running
+# The suite clears the log on purpose — point it at a scratch file so running
 # `pytest -q` never wipes a locally running dashboard's history.
 os.environ.setdefault(
-    "DB_PATH",
-    os.path.join(tempfile.mkdtemp(prefix="rag-router-tests-"), "metrics.db"),
+    "METRICS_PATH",
+    os.path.join(tempfile.mkdtemp(prefix="rag-router-tests-"), "requests.jsonl"),
 )

@@ -143,7 +143,7 @@ function drawTimeseries(series) {
   if (series.length) {
     const byMin = new Map();
     for (const r of series) {
-      // Buckets come from SQLite strftime(..., 'unixepoch') -> UTC minutes.
+      // Bucket keys are UTC minutes (gmtime), not local time — long-standing API format.
       const t = Date.parse(`${r.bucket.replace(" ", "T")}:00Z`);
       if (Number.isNaN(t)) continue;
       const slot = byMin.get(t) || { cost: 0, lats: [] };

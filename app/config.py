@@ -133,7 +133,8 @@ ALLOW_PATH_INGEST = _bool("ALLOW_PATH_INGEST", True)
 # --- App --------------------------------------------------------------------
 HOST = os.getenv("HOST", "127.0.0.1")
 PORT = int(os.getenv("PORT", "8000"))
-DB_PATH = Path(os.getenv("DB_PATH", str(BASE_DIR / "data" / "metrics.db")))
+# Append-only JSONL request log — no database engine (see app/metrics.py).
+METRICS_PATH = Path(os.getenv("METRICS_PATH", str(BASE_DIR / "data" / "requests.jsonl")))
 DOCS_DIR = Path(os.getenv("DOCS_DIR", str(BASE_DIR / "sample_data")))
 
 # --- Pricing (USD per 1M tokens). Extend as models ship. ---------------------

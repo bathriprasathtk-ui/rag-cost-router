@@ -26,7 +26,7 @@ Built as a resume project from the "three RAG projects that stand out" list:
 | **Cost-aware router** | Scores query difficulty (0–1) from lexical depth, structure, entity count, and retrieval spread; routes at a configurable threshold. |
 | **Escalation** | Small-model refusal → automatic retry on the large model, flagged in metrics — the safety net behind optimistic routing. |
 | **Budget guard** | Optional daily spend cap downshifts all traffic to the small model when reached. |
-| **Metrics** | Every request logged to SQLite: tier, model, difficulty, reasons, cache hit + similarity, per-stage latency, tokens, cost. |
+| **Metrics** | Every request kept in an in-memory log (appended to JSONL so restarts keep history): tier, model, difficulty, reasons, cache hit + similarity, per-stage latency, tokens, cost — all dashboard aggregates computed in pure Python, no database engine. |
 | **Dashboard** | Live hit rate, spend, p95 latency, cost/latency time series, routing split, per-request log with routing *reasons*. |
 
 ## Quickstart (local, full stack)
@@ -72,7 +72,7 @@ serverless ASGI function in `api/index.py`, with these cloud defaults:
 |---|---|---|
 | `VECTOR_STORE` | `memory` | no Qdrant server in serverless; corpus re-ingests on cold start |
 | `EMBEDDING_PROVIDER` | `hashing` | PyTorch exceeds Vercel's bundle limit; hashing needs zero deps |
-| `DB_PATH` | `/tmp/metrics.db` | the repo dir is read-only in functions; `/tmp` is writable |
+| `METRICS_PATH` | `/tmp/requests.jsonl` | the repo dir is read-only in functions; `/tmp` is writable |
 | `ALLOW_PATH_INGEST` | `false` | `/api/ingest`'s `path` option can pull server files into the corpus — disabled on public deployments |
 
 `GROQ_API_KEY` is read from the environment at runtime — add it in the
@@ -171,7 +171,7 @@ app/
   router.py      difficulty scoring + cost-aware routing + escalation
   cache.py       semantic response cache (threshold, TTL, LRU)
   llm.py         OpenAI-compatible client, mock provider, cost math
-  metrics.py     SQLite request log + dashboard aggregates
+  metrics.py     in-memory request log + pure-Python dashboard aggregates
   main.py        FastAPI wiring / request lifecycle
 api/index.py     Vercel serverless entry (ASGI export)
 vercel.json      rewrites + cloud env defaults
