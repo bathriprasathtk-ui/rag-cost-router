@@ -16,6 +16,13 @@ tools/qdrant/
 # Vercel
 .vercel/
 
+# uv lockfile: Vercel's builder runs `uv lock` itself with its own uv version;
+# committing one written by a different uv risks a version-skew failure there.
+uv.lock
+
+# Local verification scratch output
+artifacts/
+
 # Local/personal files (not part of the project)
 College_Assignment.docx
 resume/
